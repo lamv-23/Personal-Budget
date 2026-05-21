@@ -13,6 +13,10 @@ services:
       POSTGRES_DB: budget
       POSTGRES_USER: budget
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      # Bound to loopback only — safe on the Pi (still reachable via Tailscale on the host),
+      # and lets host-side dev tools (`pnpm dev`, `drizzle-kit`) connect on macOS/Linux.
+      - "127.0.0.1:5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:

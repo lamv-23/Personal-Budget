@@ -35,6 +35,9 @@ yarn-error.log*
 .env.local
 .env.production
 
+# uploaded documents (local dev — UPLOAD_DIR=./uploads). In prod these live in a Docker volume.
+/uploads/
+
 # vercel
 .vercel
 
