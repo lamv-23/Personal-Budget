@@ -1,3 +1,11 @@
+# Family Budget — Docker Compose stack.
+#
+# Runs on any Docker host: Raspberry Pi 5 (recommended), an old laptop, a NAS, or a cloud VM.
+# Pi 5 (ARM64) is the primary target — both images below have native arm64 builds.
+#
+# App is bound to 127.0.0.1:3000; expose externally via `tailscale serve` (private),
+# a reverse proxy + TLS, or by changing the port mapping (NOT recommended on public hosts).
+
 services:
   db:
     image: postgres:16-alpine
@@ -13,6 +21,8 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
+    # Sensible defaults for a Pi 5 with 8–16 GB RAM. Tweak if you run more services alongside.
+    shm_size: 256mb
 
   app:
     build: .
