@@ -1,0 +1,47 @@
+# Family Budget — Docker Compose stack.
+#
+# Runs on any Docker host: Raspberry Pi 5 (recommended), an old laptop, a NAS, or a cloud VM.
+# Pi 5 (ARM64) is the primary target — both images below have native arm64 builds.
+#
+# App is bound to 127.0.0.1:3000; expose externally via `tailscale serve` (private),
+# a reverse proxy + TLS, or by changing the port mapping (NOT recommended on public hosts).
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: budget
+      POSTGRES_USER: budget
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      # Bound to loopback only — safe on the Pi (still reachable via Tailscale on the host),
+      # and lets host-side dev tools (`pnpm dev`, `drizzle-kit`) connect on macOS/Linux.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budget"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    # Sensible defaults for a Pi 5 with 8–16 GB RAM. Tweak if you run more services alongside.
+    shm_size: 256mb
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://budget:${POSTGRES_PASSWORD}@db:5432/budget
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - uploads:/data/uploads
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  uploads:
