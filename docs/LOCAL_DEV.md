@@ -30,7 +30,7 @@ Verify: `node --version` ≥ `v22.7`.
 In <https://console.cloud.google.com/> → Credentials → click your OAuth client → **Authorised redirect URIs**, add:
 
 1. `http://localhost:3000/api/auth/callback/google`
-2. `https://<your-mac-tailnet-hostname>.tailf0621c.ts.net/api/auth/callback/google`
+2. `https://victors-macbook-pro.tailf0621c.ts.net/api/auth/callback/google`
 
 Find the Mac's tailnet hostname with `tailscale status` (e.g. `vinhs-macbook-pro`) or at <https://login.tailscale.com/admin/machines>.
 
@@ -106,12 +106,12 @@ tailscale serve status              # shows the URL
 
 (macOS Tailscale usually doesn't need `sudo`; prepend it if you get a permission error.)
 
-This exposes the dev server at `https://<your-mac-tailnet-hostname>.tailf0621c.ts.net` to any device on your tailnet — including your iPhone. First-time cert issuance takes ~30–60 seconds.
+This exposes the dev server at `https://victors-macbook-pro.tailf0621c.ts.net` to any device on your tailnet — including your iPhone. First-time cert issuance takes ~30–60 seconds.
 
 Update `.env.local`:
 
 ```ini
-AUTH_URL=https://<your-mac-tailnet-hostname>.tailf0621c.ts.net
+AUTH_URL=https://victors-macbook-pro.tailf0621c.ts.net
 ```
 
 Restart `pnpm dev` (Ctrl-C and re-run — Next reads env once at boot). Open the URL on your iPhone with Tailscale on. Same OAuth, real HTTPS.
