@@ -4,7 +4,7 @@
 #
 # Prerequisites (do these on your laptop first via Raspberry Pi Imager):
 #   - Flash Raspberry Pi OS Lite (64-bit) to your NVMe SSD or microSD
-#   - In Imager > "Edit Settings": set hostname (e.g. "budget-pi"), username, password,
+#   - In Imager > "Edit Settings": set hostname to "vlam-pi", configure username, password,
 #     enable SSH (with password or key), set Wi-Fi / locale / timezone
 #   - Boot the Pi, SSH in, run this script:
 #       curl -fsSL https://raw.githubusercontent.com/lamv-23/Personal-Budget/main/scripts/provision.sh | bash
@@ -76,7 +76,7 @@ fi
 if ! sudo tailscale status &>/dev/null; then
   echo -e "${GREEN}>>> Bringing Tailscale up...${NC}"
   echo "    Follow the URL printed below to authenticate this Pi to your tailnet."
-  sudo tailscale up --ssh --hostname="${HOSTNAME:-budget-pi}"
+  sudo tailscale up --ssh --hostname="${TAILSCALE_HOSTNAME:-vlam-pi}"
 else
   echo -e "${GREEN}>>> Tailscale already running (skipping)${NC}"
 fi
@@ -128,7 +128,7 @@ echo "       tailscale status | head -1"
 echo "     and expose the app over HTTPS:"
 echo "       sudo tailscale serve --bg https+insecure://localhost:3000"
 echo ""
-echo "     Then visit https://<your-pi-hostname>.<your-tailnet>.ts.net from any device on your tailnet."
+echo "     Then visit https://vlam-pi.tailf0621c.ts.net from any device on your tailnet."
 echo ""
 echo "  5. Schedule nightly backups:"
 echo "       crontab -e"

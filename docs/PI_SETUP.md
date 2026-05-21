@@ -4,6 +4,25 @@ End-to-end instructions to run the Family Budget app on a Pi 5 at home, accessib
 
 Estimated time: **~90 minutes** including hardware unboxing. ~30 minutes if your Pi is already running Raspberry Pi OS.
 
+## Your decided values (baked in throughout this guide)
+
+| Setting | Value |
+|---|---|
+| **Pi hostname** | `vlam-pi` |
+| **Tailnet** | `tailf0621c.ts.net` |
+| **App URL (final)** | `https://vlam-pi.tailf0621c.ts.net` |
+| **OAuth redirect URI** | `https://vlam-pi.tailf0621c.ts.net/api/auth/callback/google` |
+
+## Secrets you should already have saved (before touching the Pi)
+
+If you've done the pre-Pi setup, these are in your password manager:
+
+- `AUTH_GOOGLE_ID` (e.g. `1234567890-xxxxx.apps.googleusercontent.com`)
+- `AUTH_GOOGLE_SECRET` (starts with `GOCSPX-`)
+- `GEMINI_API_KEY` (starts with `AIzaSy`)
+
+If you haven't yet — see **section 5c** below for instructions.
+
 ---
 
 ## 1. Shopping list
@@ -34,7 +53,7 @@ You'll do this once, on your laptop.
    - **OS:** Raspberry Pi OS Lite (64-bit) — under "Raspberry Pi OS (other)"
    - **Storage:** your SSD
 4. Click the gear icon (or "Edit Settings") and configure:
-   - **Hostname:** `budget-pi` (or anything memorable)
+   - **Hostname:** `vlam-pi` ← important, this must match what's in your OAuth redirect URI
    - **Username + password:** pick your own (don't use defaults)
    - **Wireless LAN:** your home Wi-Fi (or skip if using Ethernet)
    - **Locale:** Australia / `Australia/Sydney`
@@ -47,12 +66,12 @@ Once done, insert the SSD into the Pi, connect the active cooler, plug in Ethern
 
 ## 3. First SSH in
 
-The Pi will boot, connect to your network, and appear on it as `budget-pi.local` (or whatever hostname you chose).
+The Pi will boot, connect to your network, and appear on it as `vlam-pi.local`.
 
 From your laptop terminal:
 
 ```bash
-ssh <username>@budget-pi.local
+ssh <username>@vlam-pi.local
 ```
 
 If `.local` doesn't resolve (some Windows machines), find the Pi's IP from your router admin page and use that instead.
@@ -80,35 +99,20 @@ After it finishes, log out and back in so your user picks up the new `docker` gr
 
 ```bash
 exit
-ssh <username>@budget-pi.local
+ssh <username>@vlam-pi.local
 ```
 
 ---
 
 ## 5. Configure environment variables
 
-You need 5 things from external services. Get them in any order:
+You should already have these from before the Pi arrived (see step 0 below for a refresher if not):
 
-### 5a. Google OAuth credentials (so you and your wife can sign in)
+- ✅ Google OAuth Client ID + Secret — redirect URI `https://vlam-pi.tailf0621c.ts.net/api/auth/callback/google`
+- ✅ Gemini API key from <https://aistudio.google.com>
+- ✅ Tailscale account — your tailnet is `tailf0621c.ts.net`
 
-1. Go to <https://console.cloud.google.com/>
-2. Create a new project: "Family Budget"
-3. **APIs & Services → OAuth consent screen** → "External" → fill in app name (`Family Budget`), your email, and a homepage URL (use any placeholder — `https://example.com` is fine, this isn't checked for personal apps in Testing mode).
-4. Add yourself and your wife to "Test users".
-5. **APIs & Services → Credentials → Create Credentials → OAuth client ID**:
-   - Type: **Web application**
-   - Authorised redirect URI: `https://budget-pi.<your-tailnet>.ts.net/api/auth/callback/google`
-     - You'll know `<your-tailnet>` after step 4 above — run `tailscale status` on the Pi to see it (it looks like `tail-abcde.ts.net`).
-6. Copy the Client ID and Client Secret somewhere safe.
-
-### 5b. Gemini API key (for AI document extraction)
-
-1. Go to <https://aistudio.google.com/>
-2. Sign in with your Google account.
-3. Click "**Get API key**" → "**Create API key**". No credit card required; free tier is plenty for personal use.
-4. Copy the key.
-
-### 5c. Generate secrets on the Pi
+### 5a. Generate secrets on the Pi
 
 ```bash
 # Auth.js session secret
@@ -117,13 +121,13 @@ openssl rand -base64 32
 openssl rand -base64 24
 ```
 
-Save both somewhere.
+Copy both somewhere safe.
 
-### 5d. Fill in `.env`
+### 5b. Clone the repo and fill in `.env`
 
 ```bash
 cd /opt/budget
-git clone https://github.com/lamv-23/Personal-Budget.git .  # if not already cloned
+git clone https://github.com/lamv-23/Personal-Budget.git .   # if not already cloned
 cp .env.example .env
 nano .env
 ```
@@ -131,24 +135,43 @@ nano .env
 Paste in:
 
 ```ini
-POSTGRES_PASSWORD=<the strong password you just generated>
-DATABASE_URL=postgres://budget:<same password>@db:5432/budget
+POSTGRES_PASSWORD=<the strong DB password you just generated>
+DATABASE_URL=postgres://budget:<same DB password>@db:5432/budget
 
-AUTH_SECRET=<the auth.js secret you generated>
-AUTH_URL=https://budget-pi.<your-tailnet>.ts.net
-AUTH_GOOGLE_ID=<from step 5a>
-AUTH_GOOGLE_SECRET=<from step 5a>
+AUTH_SECRET=<the AUTH_SECRET you just generated>
+AUTH_URL=https://vlam-pi.tailf0621c.ts.net
+AUTH_GOOGLE_ID=<your Google OAuth Client ID>
+AUTH_GOOGLE_SECRET=<your Google OAuth Client Secret>
 
 ALLOWED_EMAILS=lamv23@gmail.com,<wife's gmail>
 
 EXTRACTION_PROVIDER=gemini
-GEMINI_API_KEY=<from step 5b>
+GEMINI_API_KEY=<your Gemini API key>
 GEMINI_MODEL=gemini-2.5-flash
 
 UPLOAD_DIR=/data/uploads
 ```
 
 Save (Ctrl-O, Enter, Ctrl-X).
+
+### 5c. If you skipped the OAuth/Gemini setup earlier — do it now
+
+<details>
+<summary>Click to expand the original setup steps</summary>
+
+**Google OAuth client** (<https://console.cloud.google.com/>):
+1. Create project "Family Budget"
+2. APIs & Services → OAuth consent screen → External, fill in app name, your email; add yourself + your wife as Test users
+3. Credentials → Create Credentials → OAuth client ID → Web application
+4. Authorised redirect URI: `https://vlam-pi.tailf0621c.ts.net/api/auth/callback/google`
+5. Copy Client ID + Secret
+
+**Gemini API key** (<https://aistudio.google.com/>):
+1. Sign in with your Google account
+2. Get API key → Create API key
+3. Copy the key (free tier, no card required)
+
+</details>
 
 ---
 
@@ -184,20 +207,20 @@ Tailscale automatically issues a TLS certificate for your tailnet hostname. To c
 sudo tailscale serve status
 ```
 
-The app is now available at **`https://budget-pi.<your-tailnet>.ts.net`** to any device on your tailnet.
+The app is now available at **`https://vlam-pi.tailf0621c.ts.net`** to any device on your tailnet.
 
 ### Add your wife's phone to the tailnet
 
 1. Install the Tailscale app on her phone (iOS App Store / Google Play).
 2. Sign in with her own account, then in your Tailscale admin (<https://login.tailscale.com/admin>), invite her or share devices.
 
-Both of you should now be able to open `https://budget-pi.<your-tailnet>.ts.net` from anywhere — at home, at work, on the train — as long as the Tailscale app is on.
+Both of you should now be able to open `https://vlam-pi.tailf0621c.ts.net` from anywhere — at home, at work, on the train — as long as the Tailscale app is on.
 
 ---
 
 ## 8. Sign in and verify
 
-1. From your phone or laptop (on the tailnet): visit `https://budget-pi.<your-tailnet>.ts.net`.
+1. From your phone or laptop (on the tailnet): visit `https://vlam-pi.tailf0621c.ts.net`.
 2. Click "**Continue with Google**" → sign in with a whitelisted account.
 3. You should land on the Overview page.
 4. Quick smoke test:

@@ -52,7 +52,7 @@ docker compose up -d --build
 sudo tailscale serve --bg https+insecure://localhost:3000
 ```
 
-The app is then reachable at `https://<pi-hostname>.<your-tailnet>.ts.net` from any device on your tailnet.
+The app is then reachable at `https://vlam-pi.tailf0621c.ts.net` from any device on your tailnet.
 
 ---
 
